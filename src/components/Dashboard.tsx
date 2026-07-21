@@ -27,11 +27,20 @@ function DashboardBody() {
   }, [fetchDeliveries, startLiveUpdates, stopLiveUpdates])
 
   useEffect(() => {
-    void load()
+    let cancelled = false
+
+    void (async () => {
+      stopLiveUpdates()
+      const ok = await fetchDeliveries()
+      if (cancelled) return
+      if (ok) startLiveUpdates()
+    })()
+
     return () => {
+      cancelled = true
       stopLiveUpdates()
     }
-  }, [load, stopLiveUpdates])
+  }, [fetchDeliveries, startLiveUpdates, stopLiveUpdates])
 
   const handleSnapChange = useCallback((next: SheetSnap) => {
     setSnap(next)
@@ -64,6 +73,7 @@ function DashboardBody() {
           deliveries={deliveries}
           loading={loading}
           selectedId={selectedId}
+          gesturesEnabled={snap === 'collapsed'}
           layoutRevision={layoutRevision}
         />
         {showLive ? <LiveBadge /> : null}

@@ -18,6 +18,8 @@ const DESTINATIONS = [
 
 let currentDeliveries: Delivery[] = []
 let liveTimer: ReturnType<typeof setTimeout> | null = null
+/** When true, the next getDeliveries() call fails (dev/test harness) */
+let failNextRequest = false
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -99,10 +101,16 @@ function mutateDelivery(delivery: Delivery): Delivery {
  * Mock logistics API — async delays, rare failures, and a polling-style live feed.
  */
 export const mockTransitService = {
+  /** Force the next fetch to reject — used to verify the error UI path */
+  failNext(): void {
+    failNextRequest = true
+  },
+
   async getDeliveries(): Promise<Delivery[]> {
     await delay(randomBetween(400, 800))
 
-    if (Math.random() < 0.05) {
+    if (failNextRequest || Math.random() < 0.05) {
+      failNextRequest = false
       throw new Error('Network request failed: unable to reach transit API')
     }
 

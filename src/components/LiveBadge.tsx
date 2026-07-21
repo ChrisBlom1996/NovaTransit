@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion'
+import { useMotionPreference } from '../hooks/useMotionPreference'
 
 const BARS = [0.45, 0.85, 0.55, 1, 0.65] as const
 
 export function LiveBadge() {
+  const { reduceMotion } = useMotionPreference()
+
   return (
     <div
       className="
@@ -18,20 +21,28 @@ export function LiveBadge() {
         LIVE
       </span>
       <div className="flex h-3 items-end gap-[2px]" aria-hidden>
-        {BARS.map((peak, index) => (
-          <motion.span
-            key={index}
-            className="w-[2px] rounded-full bg-accent-amber"
-            animate={{ scaleY: [0.35, peak, 0.4, peak * 0.85, 0.35] }}
-            transition={{
-              duration: 1.1 + index * 0.08,
-              repeat: Infinity,
-              ease: 'easeInOut',
-              delay: index * 0.07,
-            }}
-            style={{ height: 12, originY: 1 }}
-          />
-        ))}
+        {BARS.map((peak, index) =>
+          reduceMotion ? (
+            <span
+              key={index}
+              className="w-[2px] rounded-full bg-accent-amber"
+              style={{ height: 12 * peak, opacity: 0.85 }}
+            />
+          ) : (
+            <motion.span
+              key={index}
+              className="w-[2px] rounded-full bg-accent-amber"
+              animate={{ scaleY: [0.35, peak, 0.4, peak * 0.85, 0.35] }}
+              transition={{
+                duration: 1.1 + index * 0.08,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                delay: index * 0.07,
+              }}
+              style={{ height: 12, originY: 1 }}
+            />
+          ),
+        )}
       </div>
     </div>
   )

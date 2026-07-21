@@ -130,6 +130,21 @@ h6,
   filter: saturate(0.85) brightness(0.92);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  .animate-pulse {
+    animation: none;
+  }
+
+  .transition-opacity,
+  .transition-colors {
+    transition: none !important;
+  }
+}
+
 :focus {
   outline: none;
 }

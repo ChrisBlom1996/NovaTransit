@@ -1,5 +1,6 @@
 import { motion, type PanInfo } from 'framer-motion'
 import { useShallow } from 'zustand/react/shallow'
+import { useMotionPreference } from '../hooks/useMotionPreference'
 import {
   selectVisibleDeliveries,
   useTransitStore,
@@ -21,6 +22,7 @@ type DeliverySheetProps = {
 }
 
 export function DeliverySheet({ snap, onSnapChange }: DeliverySheetProps) {
+  const { reduceMotion } = useMotionPreference()
   const loading = useTransitStore((s) => s.loading)
   const totalCount = useTransitStore((s) => s.deliveries.length)
   const selectedId = useTransitStore((s) => s.selectedId)
@@ -47,11 +49,19 @@ export function DeliverySheet({ snap, onSnapChange }: DeliverySheetProps) {
         bg-[color-mix(in_srgb,var(--bg)_92%,transparent)]
         shadow-[0_-16px_48px_rgba(0,0,0,0.65)]
         backdrop-blur-2xl
+        touch-manipulation
       "
       initial={false}
       animate={{ height: SNAP_HEIGHT_PX[snap] }}
-      transition={{ type: 'spring', stiffness: 380, damping: 36 }}
+      transition={
+        reduceMotion
+          ? { duration: 0 }
+          : { type: 'spring', stiffness: 380, damping: 36 }
+      }
       aria-label="Delivery feed"
+      // Keep Leaflet from claiming touches that begin on the sheet
+      onPointerDownCapture={(event) => event.stopPropagation()}
+      onTouchStartCapture={(event) => event.stopPropagation()}
     >
       {/* Drag handle — always visible in peeked state */}
       <motion.button
@@ -61,7 +71,7 @@ export function DeliverySheet({ snap, onSnapChange }: DeliverySheetProps) {
         onClick={() =>
           onSnapChange(snap === 'expanded' ? 'collapsed' : 'expanded')
         }
-        drag="y"
+        drag={reduceMotion ? false : 'y'}
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={0.12}
         onDragEnd={handleDragEnd}
@@ -83,7 +93,7 @@ export function DeliverySheet({ snap, onSnapChange }: DeliverySheetProps) {
 
       <FeedControls />
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-4 pt-2">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-4 pt-2 [touch-action:pan-y]">
         <ul className="flex flex-col gap-2">
           {loading ? (
             Array.from({ length: 5 }, (_, i) => (

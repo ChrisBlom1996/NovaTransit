@@ -27,6 +27,7 @@ type TransitState = {
 }
 
 let stopLive: (() => void) | null = null
+let fetchGeneration = 0
 
 function clearSelectionIfHidden(
   deliveries: Delivery[],
@@ -51,12 +52,15 @@ export const useTransitStore = create<TransitState>((set, get) => ({
   searchQuery: '',
 
   fetchDeliveries: async () => {
+    const generation = ++fetchGeneration
     set({ loading: true, error: null, pingingIds: [], selectedId: null })
     try {
       const deliveries = await mockTransitService.getDeliveries()
+      if (generation !== fetchGeneration) return false
       set({ deliveries, loading: false, error: null })
       return true
     } catch (err) {
+      if (generation !== fetchGeneration) return false
       const message =
         err instanceof Error ? err.message : 'Failed to load deliveries'
       set({ loading: false, error: message, deliveries: [], selectedId: null })

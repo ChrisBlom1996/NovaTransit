@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useEffect } from 'react'
+import { useMotionPreference } from '../hooks/useMotionPreference'
 import { statusColorHex } from '../services/statusColor'
 import type { DeliveryStatus } from '../types'
 
@@ -20,11 +21,16 @@ export function DeliveryPin({
   onPingComplete,
   skeleton = false,
 }: DeliveryPinProps) {
+  const { reduceMotion } = useMotionPreference()
+
   useEffect(() => {
     if (!pinging || !onPingComplete) return
-    const timer = window.setTimeout(onPingComplete, 820)
+    const timer = window.setTimeout(
+      onPingComplete,
+      reduceMotion ? 0 : 820,
+    )
     return () => window.clearTimeout(timer)
-  }, [pinging, onPingComplete])
+  }, [pinging, onPingComplete, reduceMotion])
 
   if (skeleton) {
     return (
@@ -37,10 +43,10 @@ export function DeliveryPin({
 
   return (
     <span
-      className="relative block h-3 w-3 transition-opacity duration-200"
+      className="relative block h-3 w-3 transition-opacity duration-200 motion-reduce:transition-none"
       style={{ opacity: dimmed ? 0.28 : 1 }}
     >
-      {selected && !dimmed ? (
+      {selected && !dimmed && !reduceMotion ? (
         <motion.span
           className="pointer-events-none absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{ boxShadow: `0 0 0 3px ${color}` }}
@@ -53,7 +59,13 @@ export function DeliveryPin({
           }}
         />
       ) : null}
-      {pinging && !dimmed ? (
+      {selected && !dimmed && reduceMotion ? (
+        <span
+          className="pointer-events-none absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ boxShadow: `0 0 0 2px ${color}`, opacity: 0.7 }}
+        />
+      ) : null}
+      {pinging && !dimmed && !reduceMotion ? (
         <motion.span
           key="signal-ping"
           className="pointer-events-none absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"

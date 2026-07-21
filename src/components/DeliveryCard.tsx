@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import clsx from 'clsx'
+import { useMotionPreference } from '../hooks/useMotionPreference'
 import {
   statusColorHex,
   statusLabel,
@@ -16,16 +17,22 @@ type FlashValueProps = {
 
 /** Brief highlight when a live-updated numeric/status value changes */
 function FlashValue({ value, className, children }: FlashValueProps) {
+  const { reduceMotion } = useMotionPreference()
   const prev = useRef(value)
   const [flash, setFlash] = useState(false)
 
   useEffect(() => {
     if (prev.current === value) return
     prev.current = value
+    if (reduceMotion) return
     setFlash(true)
     const timer = window.setTimeout(() => setFlash(false), 700)
     return () => window.clearTimeout(timer)
-  }, [value])
+  }, [value, reduceMotion])
+
+  if (reduceMotion) {
+    return <span className={className}>{children}</span>
+  }
 
   return (
     <motion.span
@@ -86,7 +93,7 @@ export function DeliveryCard({
             {delivery.id}
           </p>
         </div>
-          <FlashValue value={delivery.status}>
+        <FlashValue value={delivery.status}>
           <span
             className={clsx(
               'label inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium',

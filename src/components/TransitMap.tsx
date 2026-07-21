@@ -177,10 +177,30 @@ function MapPinOverlay({
   return createPortal(<>{nodes}</>, pane)
 }
 
+function MapGestureGate({ enabled }: { enabled: boolean }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (enabled) {
+      map.dragging.enable()
+      map.touchZoom.enable()
+      map.doubleClickZoom.enable()
+    } else {
+      map.dragging.disable()
+      map.touchZoom.disable()
+      map.doubleClickZoom.disable()
+    }
+  }, [map, enabled])
+
+  return null
+}
+
 type TransitMapProps = {
   deliveries: Delivery[]
   loading: boolean
   selectedId: string | null
+  /** When false, map pan/zoom gestures are off so the sheet owns touch */
+  gesturesEnabled?: boolean
   /** Bumps when sheet snaps so Leaflet recalculates size */
   layoutRevision?: number
 }
@@ -189,8 +209,11 @@ export function TransitMap({
   deliveries,
   loading,
   selectedId,
+  gesturesEnabled = true,
   layoutRevision = 0,
 }: TransitMapProps) {
+  const interactive = !loading && gesturesEnabled
+
   return (
     <div className="transit-map relative h-full w-full overflow-hidden bg-bg">
       <MapContainer
@@ -199,10 +222,10 @@ export function TransitMap({
         className="h-full w-full bg-bg"
         zoomControl={false}
         attributionControl={false}
-        dragging={!loading}
+        dragging={interactive}
         scrollWheelZoom={false}
-        doubleClickZoom={!loading}
-        touchZoom={!loading}
+        doubleClickZoom={interactive}
+        touchZoom={interactive}
       >
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -210,6 +233,7 @@ export function TransitMap({
           subdomains="abcd"
           maxZoom={19}
         />
+        <MapGestureGate enabled={interactive} />
         <InvalidateSize revision={layoutRevision} />
         {!loading && deliveries.length > 0 ? (
           <FitDeliveries deliveries={deliveries} />
