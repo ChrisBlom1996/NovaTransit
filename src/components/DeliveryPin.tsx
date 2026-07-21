@@ -7,6 +7,7 @@ type DeliveryPinProps = {
   color: string
   pinging?: boolean
   selected?: boolean
+  dimmed?: boolean
   onPingComplete?: () => void
   skeleton?: boolean
 }
@@ -15,6 +16,7 @@ export function DeliveryPin({
   color,
   pinging = false,
   selected = false,
+  dimmed = false,
   onPingComplete,
   skeleton = false,
 }: DeliveryPinProps) {
@@ -34,8 +36,11 @@ export function DeliveryPin({
   }
 
   return (
-    <span className="relative block h-3 w-3">
-      {selected ? (
+    <span
+      className="relative block h-3 w-3 transition-opacity duration-200"
+      style={{ opacity: dimmed ? 0.28 : 1 }}
+    >
+      {selected && !dimmed ? (
         <motion.span
           className="pointer-events-none absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{ boxShadow: `0 0 0 3px ${color}` }}
@@ -48,7 +53,7 @@ export function DeliveryPin({
           }}
         />
       ) : null}
-      {pinging ? (
+      {pinging && !dimmed ? (
         <motion.span
           key="signal-ping"
           className="pointer-events-none absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
@@ -62,7 +67,7 @@ export function DeliveryPin({
         className="absolute inset-0 rounded-full shadow-[0_0_0_1.5px_rgba(10,14,18,0.85)]"
         style={{
           backgroundColor: color,
-          transform: selected ? 'scale(1.35)' : undefined,
+          transform: selected && !dimmed ? 'scale(1.35)' : undefined,
         }}
       />
     </span>

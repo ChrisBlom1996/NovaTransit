@@ -1,9 +1,13 @@
 import type { LatLngExpression, Map as LeafletMap } from 'leaflet'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { MapContainer, TileLayer, useMap } from 'react-leaflet'
+import { useShallow } from 'zustand/react/shallow'
 import { TRANSIT_HUB } from '../services/mockTransitService'
-import { useTransitStore } from '../store/useTransitStore'
+import {
+  selectMatchingIds,
+  useTransitStore,
+} from '../store/useTransitStore'
 import type { Delivery } from '../types'
 import { DeliveryPin, pinColorForStatus } from './DeliveryPin'
 
@@ -53,7 +57,7 @@ function FitDeliveries({ deliveries }: { deliveries: Delivery[] }) {
     // Bias padding downward so pins sit above the collapsed sheet
     map.fitBounds(bounds, {
       paddingTopLeft: [36, 48],
-      paddingBottomRight: [36, 160],
+      paddingBottomRight: [36, 180],
       maxZoom: 13,
       animate: false,
     })
@@ -62,14 +66,9 @@ function FitDeliveries({ deliveries }: { deliveries: Delivery[] }) {
   return null
 }
 
-function FocusSelected({
-  selectedId,
-  deliveries,
-}: {
-  selectedId: string | null
-  deliveries: Delivery[]
-}) {
+function FocusSelected({ selectedId }: { selectedId: string | null }) {
   const map = useMap()
+  const deliveries = useTransitStore((s) => s.deliveries)
 
   useEffect(() => {
     if (!selectedId) return
@@ -97,6 +96,8 @@ function MapPinOverlay({
   const map = useMap()
   const pingingIds = useTransitStore((s) => s.pingingIds)
   const clearPing = useTransitStore((s) => s.clearPing)
+  const matchingIds = useTransitStore(useShallow(selectMatchingIds))
+  const matchingIdSet = useMemo(() => new Set(matchingIds), [matchingIds])
   const [, setTick] = useState(0)
 
   useEffect(() => {
@@ -150,6 +151,7 @@ function MapPinOverlay({
         const point = latLngToPanePoint(map, delivery.lat, delivery.lng)
         const pinging = pingingIds.includes(delivery.id)
         const selected = selectedId === delivery.id
+        const dimmed = !matchingIdSet.has(delivery.id)
         return (
           <div
             key={delivery.id}
@@ -158,13 +160,14 @@ function MapPinOverlay({
               left: point.x,
               top: point.y,
               transform: 'translate(-50%, -50%)',
-              zIndex: selected ? 2 : 1,
+              zIndex: selected ? 2 : dimmed ? 0 : 1,
             }}
           >
             <DeliveryPin
               color={pinColorForStatus(delivery.status)}
               pinging={pinging}
               selected={selected}
+              dimmed={dimmed}
               onPingComplete={() => handlePingComplete(delivery.id)}
             />
           </div>
@@ -211,9 +214,7 @@ export function TransitMap({
         {!loading && deliveries.length > 0 ? (
           <FitDeliveries deliveries={deliveries} />
         ) : null}
-        {!loading ? (
-          <FocusSelected selectedId={selectedId} deliveries={deliveries} />
-        ) : null}
+        {!loading ? <FocusSelected selectedId={selectedId} /> : null}
         <MapPinOverlay
           deliveries={deliveries}
           loading={loading}

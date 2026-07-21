@@ -1,22 +1,44 @@
 import { create } from 'zustand'
 import { mockTransitService } from '../services/mockTransitService'
 import type { Delivery } from '../types'
+import {
+  matchesFilters,
+  type SortBy,
+  type StatusFilter,
+} from './transitSelectors'
 
 type TransitState = {
   deliveries: Delivery[]
   loading: boolean
   error: string | null
-  /** Delivery IDs that just received a live update — drive Signal Ping on the map */
   pingingIds: string[]
   selectedId: string | null
+  sortBy: SortBy
+  statusFilter: StatusFilter
+  searchQuery: string
   fetchDeliveries: () => Promise<boolean>
   startLiveUpdates: () => void
   stopLiveUpdates: () => void
   clearPing: (id: string) => void
   selectDelivery: (id: string | null) => void
+  setSortBy: (sortBy: SortBy) => void
+  setStatusFilter: (statusFilter: StatusFilter) => void
+  setSearchQuery: (searchQuery: string) => void
 }
 
 let stopLive: (() => void) | null = null
+
+function clearSelectionIfHidden(
+  deliveries: Delivery[],
+  selectedId: string | null,
+  statusFilter: StatusFilter,
+  searchQuery: string,
+): string | null {
+  if (!selectedId) return null
+  const selected = deliveries.find((d) => d.id === selectedId)
+  if (!selected) return null
+  return matchesFilters(selected, statusFilter, searchQuery) ? selectedId : null
+}
 
 export const useTransitStore = create<TransitState>((set, get) => ({
   deliveries: [],
@@ -24,6 +46,9 @@ export const useTransitStore = create<TransitState>((set, get) => ({
   error: null,
   pingingIds: [],
   selectedId: null,
+  sortBy: 'eta',
+  statusFilter: 'all',
+  searchQuery: '',
 
   fetchDeliveries: async () => {
     set({ loading: true, error: null, pingingIds: [], selectedId: null })
@@ -52,10 +77,17 @@ export const useTransitStore = create<TransitState>((set, get) => ({
         })
         .map((d) => d.id)
 
+      const { statusFilter, searchQuery, selectedId } = get()
       set({
         deliveries,
         error: null,
         pingingIds: [...new Set([...get().pingingIds, ...pingingIds])],
+        selectedId: clearSelectionIfHidden(
+          deliveries,
+          selectedId,
+          statusFilter,
+          searchQuery,
+        ),
       })
     })
   },
@@ -76,4 +108,39 @@ export const useTransitStore = create<TransitState>((set, get) => ({
       selectedId: state.selectedId === id ? null : id,
     }))
   },
+
+  setSortBy: (sortBy) => set({ sortBy }),
+
+  setStatusFilter: (statusFilter) => {
+    const { deliveries, searchQuery, selectedId } = get()
+    set({
+      statusFilter,
+      selectedId: clearSelectionIfHidden(
+        deliveries,
+        selectedId,
+        statusFilter,
+        searchQuery,
+      ),
+    })
+  },
+
+  setSearchQuery: (searchQuery) => {
+    const { deliveries, statusFilter, selectedId } = get()
+    set({
+      searchQuery,
+      selectedId: clearSelectionIfHidden(
+        deliveries,
+        selectedId,
+        statusFilter,
+        searchQuery,
+      ),
+    })
+  },
 }))
+
+export {
+  selectVisibleDeliveries,
+  selectMatchingIds,
+  matchesFilters,
+} from './transitSelectors'
+export type { SortBy, StatusFilter } from './transitSelectors'
