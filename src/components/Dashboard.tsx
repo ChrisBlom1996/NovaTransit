@@ -1,17 +1,24 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTransitStore } from '../store/useTransitStore'
+import { DeliverySheet } from './DeliverySheet'
 import { ErrorCard } from './ErrorCard'
 import { LiveBadge } from './LiveBadge'
 import { TransitErrorBoundary } from './TransitErrorBoundary'
 import { TransitMap } from './TransitMap'
 
+type SheetSnap = 'collapsed' | 'expanded'
+
 function DashboardBody() {
   const deliveries = useTransitStore((s) => s.deliveries)
   const loading = useTransitStore((s) => s.loading)
   const error = useTransitStore((s) => s.error)
+  const selectedId = useTransitStore((s) => s.selectedId)
   const fetchDeliveries = useTransitStore((s) => s.fetchDeliveries)
   const startLiveUpdates = useTransitStore((s) => s.startLiveUpdates)
   const stopLiveUpdates = useTransitStore((s) => s.stopLiveUpdates)
+
+  const [snap, setSnap] = useState<SheetSnap>('collapsed')
+  const [layoutRevision, setLayoutRevision] = useState(0)
 
   const load = useCallback(async () => {
     stopLiveUpdates()
@@ -25,6 +32,12 @@ function DashboardBody() {
       stopLiveUpdates()
     }
   }, [load, stopLiveUpdates])
+
+  const handleSnapChange = useCallback((next: SheetSnap) => {
+    setSnap(next)
+    // Let the sheet spring settle, then refresh Leaflet layout
+    window.setTimeout(() => setLayoutRevision((n) => n + 1), 280)
+  }, [])
 
   const showLive = !loading && !error && deliveries.length > 0
 
@@ -44,15 +57,18 @@ function DashboardBody() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Top: live map */}
-      <section className="relative h-[52%] min-h-[220px] shrink-0 border-b border-border">
-        <TransitMap deliveries={deliveries} loading={loading} />
+    <div className="relative h-full overflow-hidden">
+      <div className="absolute inset-0">
+        <TransitMap
+          deliveries={deliveries}
+          loading={loading}
+          selectedId={selectedId}
+          layoutRevision={layoutRevision}
+        />
         {showLive ? <LiveBadge /> : null}
-      </section>
+      </div>
 
-      {/* Bottom: delivery feed (placeholder until feed UI is built) */}
-      <section className="min-h-0 flex-1 bg-bg" aria-hidden={!loading} />
+      <DeliverySheet snap={snap} onSnapChange={handleSnapChange} />
     </div>
   )
 }

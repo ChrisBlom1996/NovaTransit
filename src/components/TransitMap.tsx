@@ -27,12 +27,12 @@ function latLngToPanePoint(map: LeafletMap, lat: number, lng: number) {
   return map.latLngToLayerPoint([lat, lng])
 }
 
-function InvalidateSize() {
+function InvalidateSize({ revision }: { revision: number }) {
   const map = useMap()
   useEffect(() => {
     const frame = requestAnimationFrame(() => map.invalidateSize())
     return () => cancelAnimationFrame(frame)
-  }, [map])
+  }, [map, revision])
   return null
 }
 
@@ -50,8 +50,37 @@ function FitDeliveries({ deliveries }: { deliveries: Delivery[] }) {
     if (fittedKey.current === key) return
     fittedKey.current = key
     const bounds = deliveries.map((d) => [d.lat, d.lng] as [number, number])
-    map.fitBounds(bounds, { padding: [36, 36], maxZoom: 13, animate: false })
+    // Bias padding downward so pins sit above the collapsed sheet
+    map.fitBounds(bounds, {
+      paddingTopLeft: [36, 48],
+      paddingBottomRight: [36, 160],
+      maxZoom: 13,
+      animate: false,
+    })
   }, [map, deliveries])
+
+  return null
+}
+
+function FocusSelected({
+  selectedId,
+  deliveries,
+}: {
+  selectedId: string | null
+  deliveries: Delivery[]
+}) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (!selectedId) return
+    const delivery = deliveries.find((d) => d.id === selectedId)
+    if (!delivery) return
+    map.flyTo([delivery.lat, delivery.lng], Math.max(map.getZoom(), 13), {
+      duration: 0.55,
+    })
+    // Only recenter when selection changes — not on every live tick
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deliveries omitted on purpose
+  }, [map, selectedId])
 
   return null
 }
@@ -59,9 +88,11 @@ function FitDeliveries({ deliveries }: { deliveries: Delivery[] }) {
 function MapPinOverlay({
   deliveries,
   loading,
+  selectedId,
 }: {
   deliveries: Delivery[]
   loading: boolean
+  selectedId: string | null
 }) {
   const map = useMap()
   const pingingIds = useTransitStore((s) => s.pingingIds)
@@ -118,6 +149,7 @@ function MapPinOverlay({
     : deliveries.map((delivery) => {
         const point = latLngToPanePoint(map, delivery.lat, delivery.lng)
         const pinging = pingingIds.includes(delivery.id)
+        const selected = selectedId === delivery.id
         return (
           <div
             key={delivery.id}
@@ -126,11 +158,13 @@ function MapPinOverlay({
               left: point.x,
               top: point.y,
               transform: 'translate(-50%, -50%)',
+              zIndex: selected ? 2 : 1,
             }}
           >
             <DeliveryPin
               color={pinColorForStatus(delivery.status)}
               pinging={pinging}
+              selected={selected}
               onPingComplete={() => handlePingComplete(delivery.id)}
             />
           </div>
@@ -143,9 +177,17 @@ function MapPinOverlay({
 type TransitMapProps = {
   deliveries: Delivery[]
   loading: boolean
+  selectedId: string | null
+  /** Bumps when sheet snaps so Leaflet recalculates size */
+  layoutRevision?: number
 }
 
-export function TransitMap({ deliveries, loading }: TransitMapProps) {
+export function TransitMap({
+  deliveries,
+  loading,
+  selectedId,
+  layoutRevision = 0,
+}: TransitMapProps) {
   return (
     <div className="transit-map relative h-full w-full overflow-hidden bg-bg">
       <MapContainer
@@ -165,11 +207,18 @@ export function TransitMap({ deliveries, loading }: TransitMapProps) {
           subdomains="abcd"
           maxZoom={19}
         />
-        <InvalidateSize />
+        <InvalidateSize revision={layoutRevision} />
         {!loading && deliveries.length > 0 ? (
           <FitDeliveries deliveries={deliveries} />
         ) : null}
-        <MapPinOverlay deliveries={deliveries} loading={loading} />
+        {!loading ? (
+          <FocusSelected selectedId={selectedId} deliveries={deliveries} />
+        ) : null}
+        <MapPinOverlay
+          deliveries={deliveries}
+          loading={loading}
+          selectedId={selectedId}
+        />
       </MapContainer>
     </div>
   )

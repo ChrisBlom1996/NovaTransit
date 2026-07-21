@@ -22,3 +22,26 @@ export function statusColorHex(status: DeliveryStatus): string {
       return '#F2545B'
   }
 }
+
+export function statusLabel(status: DeliveryStatus): string {
+  switch (status) {
+    case 'pending':
+      return 'Pending'
+    case 'en_route':
+      return 'En route'
+    case 'delayed':
+      return 'Delayed'
+  }
+}
+
+/** Tailwind text/bg utility pair for status pills */
+export function statusPillClass(status: DeliveryStatus): string {
+  switch (status) {
+    case 'pending':
+      return 'bg-accent-amber/15 text-accent-amber'
+    case 'en_route':
+      return 'bg-accent-steel/15 text-accent-steel'
+    case 'delayed':
+      return 'bg-danger/15 text-danger'
+  }
+}

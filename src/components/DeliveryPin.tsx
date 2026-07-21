@@ -6,6 +6,7 @@ import type { DeliveryStatus } from '../types'
 type DeliveryPinProps = {
   color: string
   pinging?: boolean
+  selected?: boolean
   onPingComplete?: () => void
   skeleton?: boolean
 }
@@ -13,6 +14,7 @@ type DeliveryPinProps = {
 export function DeliveryPin({
   color,
   pinging = false,
+  selected = false,
   onPingComplete,
   skeleton = false,
 }: DeliveryPinProps) {
@@ -33,6 +35,19 @@ export function DeliveryPin({
 
   return (
     <span className="relative block h-3 w-3">
+      {selected ? (
+        <motion.span
+          className="pointer-events-none absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ boxShadow: `0 0 0 3px ${color}` }}
+          initial={{ scale: 1, opacity: 0.9 }}
+          animate={{ scale: 2.2, opacity: 0.35 }}
+          transition={{
+            duration: 1.4,
+            repeat: Infinity,
+            ease: 'easeOut',
+          }}
+        />
+      ) : null}
       {pinging ? (
         <motion.span
           key="signal-ping"
@@ -45,7 +60,10 @@ export function DeliveryPin({
       ) : null}
       <span
         className="absolute inset-0 rounded-full shadow-[0_0_0_1.5px_rgba(10,14,18,0.85)]"
-        style={{ backgroundColor: color }}
+        style={{
+          backgroundColor: color,
+          transform: selected ? 'scale(1.35)' : undefined,
+        }}
       />
     </span>
   )

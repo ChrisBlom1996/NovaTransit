@@ -8,10 +8,12 @@ type TransitState = {
   error: string | null
   /** Delivery IDs that just received a live update — drive Signal Ping on the map */
   pingingIds: string[]
+  selectedId: string | null
   fetchDeliveries: () => Promise<boolean>
   startLiveUpdates: () => void
   stopLiveUpdates: () => void
   clearPing: (id: string) => void
+  selectDelivery: (id: string | null) => void
 }
 
 let stopLive: (() => void) | null = null
@@ -21,9 +23,10 @@ export const useTransitStore = create<TransitState>((set, get) => ({
   loading: false,
   error: null,
   pingingIds: [],
+  selectedId: null,
 
   fetchDeliveries: async () => {
-    set({ loading: true, error: null, pingingIds: [] })
+    set({ loading: true, error: null, pingingIds: [], selectedId: null })
     try {
       const deliveries = await mockTransitService.getDeliveries()
       set({ deliveries, loading: false, error: null })
@@ -31,7 +34,7 @@ export const useTransitStore = create<TransitState>((set, get) => ({
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Failed to load deliveries'
-      set({ loading: false, error: message, deliveries: [] })
+      set({ loading: false, error: message, deliveries: [], selectedId: null })
       return false
     }
   },
@@ -65,6 +68,12 @@ export const useTransitStore = create<TransitState>((set, get) => ({
   clearPing: (id) => {
     set((state) => ({
       pingingIds: state.pingingIds.filter((pingId) => pingId !== id),
+    }))
+  },
+
+  selectDelivery: (id) => {
+    set((state) => ({
+      selectedId: state.selectedId === id ? null : id,
     }))
   },
 }))
