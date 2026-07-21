@@ -4,22 +4,18 @@
   /* Surfaces */
   --bg: #0a0e12;
   --surface: rgba(255, 255, 255, 0.04);
-  --surface-hover: rgba(255, 255, 255, 0.07);
   --border: rgba(255, 255, 255, 0.09);
 
   /* Accents */
-  --accent: #38bdf8;
-  --accent-warm: #f59e0b;
+  --accent-amber: #ffb020;
+  --accent-steel: #4c8cbf;
 
   /* Text */
-  --text-primary: #f1f5f9;
-  --text-muted: #94a3b8;
-  --text-disabled: #475569;
+  --text-primary: #f5f7fa;
+  --text-muted: #8b95a1;
 
   /* Semantic */
-  --success: #34d399;
-  --warning: #f59e0b;
-  --danger: #f87171;
+  --danger: #f2545b;
 
   /* Spacing (8px grid) */
   --space-1: 0.25rem;
@@ -36,25 +32,29 @@
   --radius-lg-value: 1.25rem;
   --radius-full-value: 9999px;
 
-  /* Fonts */
-  --font-family-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  /*
+    Typography roles (strict):
+    - Inter          → body copy only
+    - IBM Plex Sans  → headers / labels
+    - IBM Plex Mono  → ALL numeric data (ETA, distance, timestamps) — never use another font for numbers
+  */
+  --font-family-body: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --font-family-label: "IBM Plex Sans", system-ui, sans-serif;
+  --font-family-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, monospace;
 
-  --focus-ring: color-mix(in srgb, var(--accent) 70%, transparent);
+  --focus-ring: color-mix(in srgb, var(--accent-steel) 70%, transparent);
 }
 
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
-  --color-surface-hover: var(--surface-hover);
   --color-border: var(--border);
-  --color-accent: var(--accent);
-  --color-accent-warm: var(--accent-warm);
+  --color-accent-amber: var(--accent-amber);
+  --color-accent-steel: var(--accent-steel);
   --color-text-primary: var(--text-primary);
   --color-text-muted: var(--text-muted);
-  --color-text-disabled: var(--text-disabled);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
   --color-danger: var(--danger);
 
   --radius-sm: var(--radius-sm-value);
@@ -70,7 +70,9 @@
   --spacing-6: var(--space-6);
   --spacing-7: var(--space-7);
 
-  --font-sans: var(--font-family-sans);
+  --font-sans: var(--font-family-body);
+  --font-label: var(--font-family-label);
+  --font-mono: var(--font-family-mono);
 }
 
 *,
@@ -91,9 +93,30 @@ body {
   margin: 0;
   background-color: var(--bg);
   color: var(--text-primary);
-  font-family: var(--font-family-sans);
+  font-family: var(--font-family-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headers & labels — IBM Plex Sans */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.label {
+  font-family: var(--font-family-label);
+}
+
+/*
+  Numeric data — IBM Plex Mono only.
+  Use .font-mono / .tabular-nums on ETA, distance, timestamps, counts, etc.
+*/
+.font-mono,
+.tabular-nums {
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 :focus {

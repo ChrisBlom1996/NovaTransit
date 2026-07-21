@@ -1,8 +1,14 @@
+import { PhoneFrame } from './components/PhoneFrame'
+
 function App() {
   return (
-    <div className="flex h-full min-h-dvh items-center justify-center bg-bg text-text-primary">
-      <h1 className="text-2xl font-semibold tracking-tight">NovaTransit</h1>
-    </div>
+    <PhoneFrame>
+      <div className="flex h-full items-center justify-center">
+        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
+          NovaTransit
+        </h1>
+      </div>
+    </PhoneFrame>
   )
 }
 
