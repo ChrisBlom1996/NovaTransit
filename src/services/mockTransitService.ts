@@ -16,8 +16,6 @@ const DESTINATIONS = [
   'Mowbray Yard',
 ] as const
 
-const STATUSES: DeliveryStatus[] = ['pending', 'en_route', 'delayed']
-
 let currentDeliveries: Delivery[] = []
 let liveTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -27,10 +25,6 @@ function delay(ms: number): Promise<void> {
 
 function randomBetween(min: number, max: number): number {
   return min + Math.random() * (max - min)
-}
-
-function pick<T>(items: readonly T[]): T {
-  return items[Math.floor(Math.random() * items.length)]!
 }
 
 function round(value: number, digits = 2): number {
@@ -46,8 +40,17 @@ function generateDeliveries(count = 8): Delivery[] {
   const now = Date.now()
   const shuffled = [...DESTINATIONS].sort(() => Math.random() - 0.5)
 
+  // Guarantee a visible mix of all three statuses (amber / steel / danger)
+  const statusPool: DeliveryStatus[] = []
+  while (statusPool.length < count) {
+    statusPool.push('pending', 'en_route', 'delayed')
+  }
+  const statuses = statusPool
+    .slice(0, count)
+    .sort(() => Math.random() - 0.5)
+
   return Array.from({ length: count }, (_, index) => {
-    const status = pick(STATUSES)
+    const status = statuses[index]!
     const distanceKm = round(randomBetween(1.2, 28))
     const etaMinutes = Math.round(
       distanceKm * randomBetween(2.2, 3.8) +
@@ -75,14 +78,16 @@ function mutateDelivery(delivery: Delivery): Delivery {
   const etaDrift = Math.round(randomBetween(-6, 4))
   next.etaMinutes = Math.max(1, next.etaMinutes + etaDrift)
 
-  // Occasional status shift to keep the live feed feeling alive
+  // Rotate statuses in both directions so pending (amber) doesn't drain away
   if (Math.random() < 0.28) {
-    if (next.status === 'pending' && Math.random() < 0.6) {
-      next.status = 'en_route'
-    } else if (next.status === 'en_route' && Math.random() < 0.25) {
-      next.status = 'delayed'
-    } else if (next.status === 'delayed' && Math.random() < 0.35) {
-      next.status = 'en_route'
+    if (next.status === 'pending') {
+      next.status = Math.random() < 0.7 ? 'en_route' : 'delayed'
+    } else if (next.status === 'en_route') {
+      const roll = Math.random()
+      next.status = roll < 0.35 ? 'delayed' : roll < 0.55 ? 'pending' : 'en_route'
+    } else {
+      // delayed
+      next.status = Math.random() < 0.45 ? 'en_route' : 'pending'
     }
   }
 

@@ -57,8 +57,9 @@ function DashboardBody() {
   }
 
   return (
-    <div className="relative h-full overflow-hidden">
-      <div className="absolute inset-0">
+    <div className="relative h-full min-h-0 overflow-hidden">
+      {/* z-0 traps Leaflet's internal z-indexes (200–700) below the sheet */}
+      <div className="absolute inset-0 z-0">
         <TransitMap
           deliveries={deliveries}
           loading={loading}
@@ -68,6 +69,7 @@ function DashboardBody() {
         {showLive ? <LiveBadge /> : null}
       </div>
 
+      {/* Mounted here — above the map, peeked by default */}
       <DeliverySheet snap={snap} onSnapChange={handleSnapChange} />
     </div>
   )
