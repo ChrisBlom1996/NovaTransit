@@ -119,6 +119,17 @@ h6,
   font-variant-numeric: tabular-nums;
 }
 
+/* Leaflet — dark theme chrome */
+.transit-map .leaflet-container {
+  background: var(--bg);
+  font: inherit;
+}
+
+.transit-map .leaflet-tile-pane {
+  /* Slight desaturation so pins read clearer */
+  filter: saturate(0.85) brightness(0.92);
+}
+
 :focus {
   outline: none;
 }

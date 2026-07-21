@@ -1,7 +1,7 @@
 import type { Delivery, DeliveryStatus } from '../types'
 
 /** Cape Town CBD — fixed hub for mock geospatial scatter */
-const HUB = { lat: -33.9249, lng: 18.4241 } as const
+export const TRANSIT_HUB = { lat: -33.9249, lng: 18.4241 } as const
 
 const DESTINATIONS = [
   'V&A Waterfront Depot',
@@ -60,8 +60,8 @@ function generateDeliveries(count = 8): Delivery[] {
       distanceKm,
       etaMinutes,
       status,
-      lat: offsetCoord(HUB.lat, 0.08),
-      lng: offsetCoord(HUB.lng, 0.1),
+      lat: offsetCoord(TRANSIT_HUB.lat, 0.08),
+      lng: offsetCoord(TRANSIT_HUB.lng, 0.1),
       lastUpdated: new Date(now - Math.floor(randomBetween(0, 120_000))).toISOString(),
     }
   })
