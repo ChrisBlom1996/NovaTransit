@@ -8,3 +8,9 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 )
+
+if (import.meta.env.DEV) {
+  void import('./dev/verifyMockApi').then(({ verifyMockApi }) => {
+    verifyMockApi()
+  })
+}
