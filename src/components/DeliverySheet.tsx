@@ -1,4 +1,5 @@
 import { motion, type PanInfo } from 'framer-motion'
+import { useRef } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useMotionPreference } from '../hooks/useMotionPreference'
 import {
@@ -30,15 +31,20 @@ export function DeliverySheet({ snap, onSnapChange }: DeliverySheetProps) {
   const visibleDeliveries = useTransitStore(
     useShallow(selectVisibleDeliveries),
   )
+  const didDragRef = useRef(false)
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
-    if (info.offset.y < -48 || info.velocity.y < -400) {
+    // Dragging the handle up expands; down collapses
+    if (info.offset.y < -40 || info.velocity.y < -300) {
       onSnapChange('expanded')
-      return
-    }
-    if (info.offset.y > 48 || info.velocity.y > 400) {
+    } else if (info.offset.y > 40 || info.velocity.y > 300) {
       onSnapChange('collapsed')
     }
+  }
+
+  const toggleSnap = () => {
+    if (didDragRef.current) return
+    onSnapChange(snap === 'expanded' ? 'collapsed' : 'expanded')
   }
 
   return (
@@ -49,7 +55,6 @@ export function DeliverySheet({ snap, onSnapChange }: DeliverySheetProps) {
         bg-[color-mix(in_srgb,var(--bg)_92%,transparent)]
         shadow-[0_-16px_48px_rgba(0,0,0,0.65)]
         backdrop-blur-2xl
-        touch-manipulation
       "
       initial={false}
       animate={{ height: SNAP_HEIGHT_PX[snap] }}
@@ -59,22 +64,37 @@ export function DeliverySheet({ snap, onSnapChange }: DeliverySheetProps) {
           : { type: 'spring', stiffness: 380, damping: 36 }
       }
       aria-label="Delivery feed"
-      // Keep Leaflet from claiming touches that begin on the sheet
-      onPointerDownCapture={(event) => event.stopPropagation()}
-      onTouchStartCapture={(event) => event.stopPropagation()}
     >
-      {/* Drag handle — always visible in peeked state */}
+      {/*
+        Drag handle — pointer events must reach this button.
+        Do NOT stopPropagation on the section in the capture phase;
+        that blocked Framer drag listeners on this handle.
+        Sheet sits above the map (z-50), so map won't receive these touches anyway.
+      */}
       <motion.button
         type="button"
-        className="flex shrink-0 cursor-grab flex-col items-center active:cursor-grabbing touch-none px-4 pb-2 pt-2.5"
+        className="
+          flex shrink-0 cursor-grab flex-col items-center
+          active:cursor-grabbing touch-none select-none
+          px-4 pb-2 pt-2.5
+        "
         aria-label={snap === 'expanded' ? 'Collapse panel' : 'Expand panel'}
-        onClick={() =>
-          onSnapChange(snap === 'expanded' ? 'collapsed' : 'expanded')
-        }
+        onTap={toggleSnap}
         drag={reduceMotion ? false : 'y'}
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={0.12}
-        onDragEnd={handleDragEnd}
+        dragConstraints={{ top: -120, bottom: 80 }}
+        dragElastic={0.18}
+        dragMomentum={false}
+        dragSnapToOrigin
+        onDragStart={() => {
+          didDragRef.current = true
+        }}
+        onDragEnd={(event, info) => {
+          handleDragEnd(event, info)
+          // Allow a beat so onTap from the same gesture is ignored
+          window.setTimeout(() => {
+            didDragRef.current = false
+          }, 50)
+        }}
       >
         <span className="h-1.5 w-11 rounded-full bg-white/35" />
         <div className="mt-2.5 flex w-full items-center justify-between">

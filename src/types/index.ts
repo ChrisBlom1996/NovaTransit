@@ -6,6 +6,8 @@ export type Delivery = {
   distanceKm: number
   etaMinutes: number
   status: DeliveryStatus
+  /** Ops note — e.g. traffic, dwell, break. Null when nothing notable. */
+  reason: string | null
   lat: number
   lng: number
   lastUpdated: string

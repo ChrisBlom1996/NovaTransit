@@ -67,6 +67,9 @@ export function DeliveryCard({
   onSelect,
 }: DeliveryCardProps) {
   const accent = statusColorHex(delivery.status)
+  const showReason =
+    Boolean(delivery.reason) &&
+    (delivery.status === 'delayed' || delivery.status === 'en_route')
 
   return (
     <button
@@ -93,16 +96,25 @@ export function DeliveryCard({
             {delivery.id}
           </p>
         </div>
-        <FlashValue value={delivery.status}>
-          <span
-            className={clsx(
-              'label inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium',
-              statusPillClass(delivery.status),
-            )}
-          >
-            {statusLabel(delivery.status)}
-          </span>
-        </FlashValue>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <FlashValue value={delivery.status}>
+            <span
+              className={clsx(
+                'label inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium',
+                statusPillClass(delivery.status),
+              )}
+            >
+              {statusLabel(delivery.status)}
+            </span>
+          </FlashValue>
+          {showReason ? (
+            <FlashValue value={delivery.reason ?? ''}>
+              <p className="max-w-[140px] text-right text-[11px] leading-snug text-text-muted">
+                {delivery.reason}
+              </p>
+            </FlashValue>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-3 flex items-baseline gap-4">
